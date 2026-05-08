@@ -1,8 +1,6 @@
-#include <iostream>
-
-using namespace std;
+#include "mlp/mlp.hpp"
 
 int main() {
-    cout << "Hello, World!";
+    print_hello();
     return 0;
 }
