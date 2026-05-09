@@ -17,10 +17,20 @@ Implementação de uma Rede Neural **MultiLayer Perceptron** utilizando o algori
 
 ## Instalação
 
-1. Clone este repositório.
+1. Baixe o compilador do Zig:
+
+- **Windows**: `winget install -e --id zig.zig`
+- **MacOS**: `brew install zig`
+- **Linux**: `sudo apt-get install -y zig`
+- **Mise-en-place**: `mise install -g zig:0.14`
+
+Veja outras formas de instalação aqui: https://ziglang.org/learn/getting-started/#managers.
+
+2. Clone este repositório e entre no respositório.
 
 ```sh
 git clone https://github.com/caio-bernardo/mlp-at-home.git
+cd mlp-at-home
 ```
 
 ## Uso
