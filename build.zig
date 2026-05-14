@@ -15,7 +15,11 @@ pub fn build(b: *std.Build) void {
     });
 
     // 2. Adiciona os arquivos C++
-    exe.root_module.addCSourceFiles(.{ .root = b.path("src"), .files = &.{ "main.cpp", "mlp/mlp.cpp" }, .flags = flags });
+    exe.root_module.addCSourceFiles(.{ 
+        .root = b.path("src"), 
+        .files = &.{ "main.cpp", "mlp/mlp.cpp", "io/dataIO.cpp" },
+        .flags = flags 
+    });
 
     // 3. Linka com a biblioteca padrão do C++
     exe.root_module.linkSystemLibrary("stdc++", .{});
