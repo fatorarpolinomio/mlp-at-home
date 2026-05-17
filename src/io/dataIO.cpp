@@ -1,6 +1,7 @@
 #include "dataIO.hpp"
 #include <algorithm>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <random>
 #include <sstream>
@@ -147,4 +148,142 @@ std::vector<TrainingData> loadCharacterData(const std::string &x_filename,
         }
     }
     return dataset;
+}
+
+void exportHyperparameters(const std::string &filename,
+                           int input_size, int output_size,
+                           const std::vector<int> &hidden_sizes,
+                           int epocas, float threshold, float learning_rate,
+                           int epocas_executadas, float erro_final) {
+    std::ofstream f(filename);
+    if (!f.is_open()) {
+        std::cerr << "Erro ao criar arquivo: " << filename << std::endl;
+        return;
+    }
+
+    f << std::fixed << std::setprecision(8);
+    f << "---- Hiperparametros de inicializacao ----" << std::endl;
+    f << "Tamanho da entrada     : " << input_size << std::endl;
+    f << "Tamanho da saida       : " << output_size << std::endl;
+    f << "Camadas escondidas     : [";
+    for (size_t i = 0; i < hidden_sizes.size(); i++) {
+        f << hidden_sizes[i];
+        if (i + 1 < hidden_sizes.size()) f << ", ";
+    }
+    f << "]" << std::endl;
+    f << "Epocas maximas         : " << epocas << std::endl;
+    f << "Threshold     : " << threshold << std::endl;
+    f << "Taxa de aprendizado    : " << learning_rate << std::endl;
+
+    f << std::endl;
+    f << "---- Resultados finais ----" << std::endl;
+    f << "Epocas executadas      : " << epocas_executadas << std::endl;
+    f << "Erro final (MSE medio) : " << erro_final << std::endl;
+
+    std::cout << "Arquivo com hiperparametros: " << filename << std::endl;
+}
+
+void exportWeights(const std::string &filename, const WeightSnapshot &snap,
+                   const std::string &label) {
+    std::ofstream f(filename);
+    if (!f.is_open()) {
+        std::cerr << "Erro ao criar arquivo: " << filename << std::endl;
+        return;
+    }
+
+    f << std::fixed << std::setprecision(8);
+
+    f << "# " << label << std::endl;
+    f << "# Formato: layer_idx,tipo ,neuron_idx,valor_0,valor_1,..." << std::endl;
+    f << "# tipo=weight -> pesos de um neurônio (um valor por entrada)" << std::endl;
+    f << "# tipo=bias   -> bias de um neurônio (um unico valor)" << std::endl;
+
+    for (size_t layer = 0; layer < snap.weights.size(); layer++) {
+        // Pesos
+        for (size_t neuron = 0; neuron < snap.weights[layer].size(); neuron++) {
+            f << layer << ",weight," << neuron;
+            for (float w : snap.weights[layer][neuron]) {
+                f << "," << w;
+            }
+            f << "\n";
+        }
+        // Biases
+        for (size_t neuron = 0; neuron < snap.biases[layer].size(); neuron++) {
+            f << layer << ",bias," << neuron << "," << snap.biases[layer][neuron] << "\n";
+        }
+    }
+
+    std::cout << "Arquivo com Pesos (" << label << "): " << filename << std::endl;
+}
+
+void exportEpochErrors(const std::string &filename,
+                       const std::vector<float> &epoch_losses) {
+    std::ofstream f(filename);
+    if (!f.is_open()) {
+        std::cerr << "Erro ao criar arquivo: " << filename << std::endl;
+        return;
+    }
+
+    f << std::fixed << std::setprecision(8);
+    f << "epoca,erro_medio_mse" << std::endl;
+    for (size_t i = 0; i < epoch_losses.size(); i++) {
+        f << (i + 1) << "," << epoch_losses[i] << "\n";
+    }
+
+    std::cout << "Arquivo com Erros por epoca : " << filename << std::endl;
+}
+
+void exportTestPredictions(const std::string &filename,
+                           const std::vector<TrainingData> &test_data,
+                           const std::vector<std::vector<float>> &predictions) {
+    std::ofstream f(filename);
+    if (!f.is_open()) {
+        std::cerr << "Erro ao criar arquivo: " << filename << std::endl;
+        return;
+    }
+
+    f << std::fixed << std::setprecision(6);
+
+    // índice, letra esperada, letra predita, acerto,
+    // saída para cada classe (A..Z)
+    f << "idx,letra_esperada,letra_predita,acerto";
+    for (char c = 'A'; c <= 'Z'; c++) {
+        f << ",saida_" << c;
+    }
+    f << std::endl;
+
+    for (size_t i = 0; i < test_data.size() && i < predictions.size(); i++) {
+
+        // letra esperada
+        int expected_idx = 0;
+        float expected_max = test_data[i].output[0];
+        for (int j = 1; j < 26; j++) {
+            if (test_data[i].output[j] > expected_max) {
+                expected_max = test_data[i].output[j];
+                expected_idx = j;
+            }
+        }
+
+        // letra predita
+        int predicted_idx = 0;
+        float predicted_max = predictions[i][0];
+        for (int j = 1; j < 26; j++) {
+            if (predictions[i][j] > predicted_max) {
+                predicted_max = predictions[i][j];
+                predicted_idx = j;
+            }
+        }
+
+        char expected_letter = 'A' + expected_idx;
+        char predicted_letter = 'A' + predicted_idx;
+        int acerto = (expected_letter == predicted_letter) ? 1 : 0;
+
+        f << i << "," << expected_letter << "," << predicted_letter << "," << acerto;
+        for (int j = 0; j < 26; j++) {
+            f << "," << predictions[i][j];
+        }
+        f << "\n";
+    }
+
+    std::cout << "Arquivo com Predicoes de teste: " << filename << std::endl;
 }

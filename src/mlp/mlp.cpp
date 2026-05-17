@@ -1,4 +1,3 @@
-
 #include "./mlp.hpp"
 #include <assert.h>
 #include <iostream>
@@ -18,7 +17,8 @@ Layer::Layer(int num_neurons, int num_inputs) {
     // Preenche os pesos com números aleatórios
     std::random_device rnd;
     std::mt19937 gen(rnd());
-    std::uniform_real_distribution<> dist(-1.0, 1.0);
+    float limit = sqrt(6.0f / (num_inputs + num_neurons));
+    std::uniform_real_distribution<> dist(-limit, limit);
 
     for (int i = 0; i < num_neurons; ++i) {
         for (int j = 0; j < num_inputs; ++j) {
@@ -42,6 +42,31 @@ MLPNetwork::MLPNetwork(int input_size, int output_size,
                   i == 0 ? input_size : hidden_layer_sizes[i - 1]));
     }
     layers.push_back(Layer(output_size, hidden_layer_sizes.back()));
+
+    // Pega os pesos iniciais
+    initial_weights = captureWeights();
+}
+
+// Pega os pesos atuais
+WeightSnapshot MLPNetwork::captureWeights() const {
+    WeightSnapshot snap;
+    for (const auto &layer : layers) {
+        snap.weights.push_back(layer.weights);
+        snap.biases.push_back(layer.biases);
+    }
+    return snap;
+}
+
+const WeightSnapshot &MLPNetwork::getInitialWeights() const {
+    return initial_weights;
+}
+
+WeightSnapshot MLPNetwork::getFinalWeights() const {
+    return captureWeights();
+}
+
+int MLPNetwork::getNumLayers() const {
+    return (int)layers.size();
 }
 
 // MSE (Mean Square Error)
@@ -97,8 +122,7 @@ MLPNetwork::forwardPropagation(const std::vector<float> &input) {
         auto next_activation = std::vector<float>(layer.biases.size(), 0.0f);
 
         for (size_t neuron = 0; neuron < layer.biases.size(); neuron++) {
-            auto &z = layer.biases[neuron];
-
+            float z = layer.biases[neuron];
             for (size_t input = 0; input < activation.size(); input++) {
                 z += layer.weights[neuron][input] * activation[input];
             }
@@ -118,13 +142,11 @@ void MLPNetwork::backwardPropagation(
     const std::vector<float> &input,
     const std::vector<float> &expected_output) {
 
-    auto output = forwardPropagation(input);
-
     // deltas do layer de saída
     auto &output_layer = layers.back();
     auto output_layer_id = layers.size() - 1;
     for (size_t neuron = 0; neuron < output_layer.deltas.size(); neuron++) {
-        auto prediction = output[neuron];
+        auto prediction = output_layer.activations[neuron];
         auto target = expected_output[neuron];
         auto activation_func_deriv = activation_function_derivative(prediction);
 
@@ -161,11 +183,11 @@ void MLPNetwork::backwardPropagation(
             layer_input = layers[i - 1].activations;
         }
 
-        for (size_t neuron = 0; neuron < layer.biases.size() - 1; neuron++) {
+        for (size_t neuron = 0; neuron < layer.biases.size(); neuron++) {
             layer.bias_gradients[neuron] += layer.deltas[neuron];
         }
 
-        for (size_t neuron = 0; neuron < layer.deltas.size() - 1; neuron++) {
+        for (size_t neuron = 0; neuron < layer.deltas.size(); neuron++) {
             for (size_t j = 0; j < layer_input.size(); j++) {
                 layer.weight_gradients[neuron][j] +=
                     layer.deltas[neuron] * layer_input[j];
@@ -189,19 +211,25 @@ void MLPNetwork::updateWeightsAndBiases(float learning_rate) {
         }
 
         // atualiza os biases
-        for (size_t neuron = 0; neuron < layer.biases.size() - 1; neuron++) {
+        for (size_t neuron = 0; neuron < layer.biases.size(); neuron++) {
             auto gradient = layer.bias_gradients[neuron];
             layer.biases[neuron] -= learning_rate * gradient;
         }
     }
 }
 
-void MLPNetwork::train(const std::vector<TrainingData> &data, int epoches,
-                       float threshold, float learning_rate) {
+// Retorna os erros médios por epoch
+std::vector<float> MLPNetwork::train(const std::vector<TrainingData> &data,
+                                     int epoches, float threshold,
+                                     float learning_rate) {
+    std::vector<float> epoch_losses;
+    epoch_losses.reserve(epoches);
+
     // para cada época
     for (int epoch = 0; epoch < epoches; epoch++) {
         // executa um treinamento
         float average_loss = trainForEpoch(data, learning_rate);
+        epoch_losses.push_back(average_loss);
 
         std::cout << "Epoca " << epoch + 1 << "/" << epoches
                   << " | Loss (Erro): " << average_loss << std::endl;
@@ -210,15 +238,14 @@ void MLPNetwork::train(const std::vector<TrainingData> &data, int epoches,
             std::cout
                 << "Treinamento encerrado: erro ficou abaixo do threshold!"
                 << std::endl;
-            break;
-        }
 
-        // se a taxa de perda for menor que o threshold podemos parar a
-        // simulação
-        if (average_loss < threshold) {
+            // se a taxa de perda for menor que o threshold podemos parar a
+            // simulação
             break;
         }
     }
+
+    return epoch_losses;
 }
 
 std::vector<float> MLPNetwork::predict(const std::vector<float> &input) {

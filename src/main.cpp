@@ -32,22 +32,31 @@ int main() {
     std::vector<TrainingData> train_data, test_data;
     splitTrainTest(full_dataset, 0.8f, train_data, test_data);
 
-    // 120 entradas, 1 camada escondida com 60 neurônios
-    auto mlp = MLPNetwork(input_size, output_size, std::vector<int>(1, 60),
+    // Hiperparâmetros
+    std::vector<int> hidden_sizes = {60};
+    int epocas = 100;
+    float threshold = 0.01f;
+    float learning_rate = 0.001f;
+
+    auto mlp = MLPNetwork(input_size, output_size, hidden_sizes,
                           ActivationFunctionType::Sigmoid);
 
-    std::cout << "\nFazendo o treinamento..." << std::endl;
-    int epocas = 100;
-    float threshold = 0.05f;
-    float learning_rate = 0.005f;
+    exportWeights("pesos_iniciais.csv", mlp.getInitialWeights(), "Pesos Iniciais");
 
-    mlp.train(train_data, epocas, threshold, learning_rate);
+    std::cout << "\nFazendo o treinamento..." << std::endl;
+
+    auto epoch_losses = mlp.train(train_data, epocas, threshold, learning_rate);
 
     std::cout << "\nResultados das previsões (10 primeiras):" << std::endl;
     int acertos = 0;
 
+    // Pega as predições do conjunto de teste
+    std::vector<std::vector<float>> predictions;
+    predictions.reserve(test_data.size());
+
     for (size_t i = 0; i < test_data.size(); i++) {
         auto response = mlp.predict(test_data[i].input);
+        predictions.push_back(response);
 
         char letra_esperada = getPredictedLetter(test_data[i].output);
         char letra_predita = getPredictedLetter(response);
@@ -68,10 +77,17 @@ int main() {
               << std::endl;
     std::cout << "Acuracia: " << acuracia << "%" << std::endl;
 
-    // TODO: exportar dados do trabalho:
-    // 1. hiperparametros finais e de inicialização
-    // 2. pesos iniciais e finais
-    // 3. erro cometido em cada interação
-    // 4. saída produzida em cada dado de teste
+    float erro_final = epoch_losses.empty() ? 0.0f : epoch_losses.back();
+    exportHyperparameters(
+        "hiperparametros.txt",
+        input_size, output_size, hidden_sizes,
+        epocas, threshold, learning_rate,
+        (int)epoch_losses.size(), erro_final);
+
+    exportWeights("pesos_finais.csv", mlp.getFinalWeights(), "Pesos Finais");
+    exportEpochErrors("erros_por_epoca.csv", epoch_losses);
+    exportTestPredictions("predicoes_teste.csv", test_data, predictions);
+    std::cout << "\nDados exportados com sucesso!" << std::endl;
+
     return 0;
 }

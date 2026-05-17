@@ -36,6 +36,12 @@ typedef struct TrainingSample {
     std::vector<float> output;
 } TrainingData;
 
+// Armazena os pesos e biases de todas as camadas
+struct WeightSnapshot {
+    std::vector<Matrix> weights;
+    std::vector<std::vector<float>> biases;
+};
+
 // MultiLayerPerceptronNetwork é uma implementação autoral de uma rede neural
 // MLP
 class MLPNetwork {
@@ -44,6 +50,9 @@ class MLPNetwork {
     std::vector<Layer> layers;
     // tipo de função de ativação. ex.: ReLU, sigmoid
     ActivationFunctionType activation_type;
+
+    // snapshot dos pesos iniciais
+    WeightSnapshot initial_weights;
 
     // forwardPropagation realiza a propagação para frente da rede, computando
     // as ativações de cada camada
@@ -65,6 +74,9 @@ class MLPNetwork {
     // activation_function_derivative é a derivada da função de ativação
     float activation_function_derivative(float z);
 
+    // Pega os pesos atuais
+    WeightSnapshot captureWeights() const;
+
   public:
     MLPNetwork(
         int input_size, int output_size, std::vector<int> hidden_layer_sizes,
@@ -72,7 +84,13 @@ class MLPNetwork {
 
     // predict realiza a predição da rede para um dado de entrada
     std::vector<float> predict(const std::vector<float> &input);
-    // train realiza o treinamento da rede para um dado de entrada e saída
-    void train(const std::vector<TrainingData> &data, int epoches,
-               float threshold, float learningRate);
+
+    std::vector<float> train(const std::vector<TrainingData> &data, int epoches,
+                             float threshold, float learningRate);
+
+    const WeightSnapshot &getInitialWeights() const;
+
+    WeightSnapshot getFinalWeights() const;
+
+    int getNumLayers() const;
 };
