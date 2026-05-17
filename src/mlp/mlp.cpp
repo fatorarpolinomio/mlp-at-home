@@ -18,7 +18,8 @@ Layer::Layer(int num_neurons, int num_inputs) {
     // Preenche os pesos com números aleatórios
     std::random_device rnd;
     std::mt19937 gen(rnd());
-    std::uniform_real_distribution<> dist(-1.0, 1.0);
+    float limit = sqrt(6.0f / (num_inputs + num_neurons));
+    std::uniform_real_distribution<> dist(-limit, limit);
 
     for (int i = 0; i < num_neurons; ++i) {
         for (int j = 0; j < num_inputs; ++j) {
@@ -117,13 +118,11 @@ void MLPNetwork::backwardPropagation(
     const std::vector<float> &input,
     const std::vector<float> &expected_output) {
 
-    auto output = forwardPropagation(input);
-
     // deltas do layer de saída
     auto &output_layer = layers.back();
     auto output_layer_id = layers.size() - 1;
     for (size_t neuron = 0; neuron < output_layer.deltas.size(); neuron++) {
-        auto prediction = output[neuron];
+        auto prediction = output_layer.activations[neuron];
         auto target = expected_output[neuron];
         auto activation_func_deriv = activation_function_derivative(prediction);
 
@@ -209,14 +208,12 @@ void MLPNetwork::train(const std::vector<TrainingData> &data, int epoches,
             std::cout
                 << "Treinamento encerrado: erro ficou abaixo do threshold!"
                 << std::endl;
+
+            // se a taxa de perda for menor que o threshold podemos parar a
+            // simulação
             break;
         }
 
-        // se a taxa de perda for menor que o threshold podemos parar a
-        // simulação
-        if (average_loss < threshold) {
-            break;
-        }
     }
 }
 

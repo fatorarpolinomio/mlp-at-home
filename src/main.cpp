@@ -38,8 +38,8 @@ int main() {
 
     std::cout << "\nFazendo o treinamento..." << std::endl;
     int epocas = 100;
-    float threshold = 0.05f;
-    float learning_rate = 0.005f;
+    float threshold = 0.01f;
+    float learning_rate = 0.001f;
 
     mlp.train(train_data, epocas, threshold, learning_rate);
 
