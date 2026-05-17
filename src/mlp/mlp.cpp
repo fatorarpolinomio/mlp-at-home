@@ -1,4 +1,3 @@
-
 #include "./mlp.hpp"
 #include <assert.h>
 #include <iostream>
@@ -43,6 +42,31 @@ MLPNetwork::MLPNetwork(int input_size, int output_size,
                   i == 0 ? input_size : hidden_layer_sizes[i - 1]));
     }
     layers.push_back(Layer(output_size, hidden_layer_sizes.back()));
+
+    // Pega os pesos iniciais
+    initial_weights = captureWeights();
+}
+
+// Pega os pesos atuais
+WeightSnapshot MLPNetwork::captureWeights() const {
+    WeightSnapshot snap;
+    for (const auto &layer : layers) {
+        snap.weights.push_back(layer.weights);
+        snap.biases.push_back(layer.biases);
+    }
+    return snap;
+}
+
+const WeightSnapshot &MLPNetwork::getInitialWeights() const {
+    return initial_weights;
+}
+
+WeightSnapshot MLPNetwork::getFinalWeights() const {
+    return captureWeights();
+}
+
+int MLPNetwork::getNumLayers() const {
+    return (int)layers.size();
 }
 
 // MSE (Mean Square Error)
@@ -194,12 +218,18 @@ void MLPNetwork::updateWeightsAndBiases(float learning_rate) {
     }
 }
 
-void MLPNetwork::train(const std::vector<TrainingData> &data, int epoches,
-                       float threshold, float learning_rate) {
+// Retorna os erros médios por epoch
+std::vector<float> MLPNetwork::train(const std::vector<TrainingData> &data,
+                                     int epoches, float threshold,
+                                     float learning_rate) {
+    std::vector<float> epoch_losses;
+    epoch_losses.reserve(epoches);
+
     // para cada época
     for (int epoch = 0; epoch < epoches; epoch++) {
         // executa um treinamento
         float average_loss = trainForEpoch(data, learning_rate);
+        epoch_losses.push_back(average_loss);
 
         std::cout << "Epoca " << epoch + 1 << "/" << epoches
                   << " | Loss (Erro): " << average_loss << std::endl;
@@ -213,8 +243,9 @@ void MLPNetwork::train(const std::vector<TrainingData> &data, int epoches,
             // simulação
             break;
         }
-
     }
+
+    return epoch_losses;
 }
 
 std::vector<float> MLPNetwork::predict(const std::vector<float> &input) {
