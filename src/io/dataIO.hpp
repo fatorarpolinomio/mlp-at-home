@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+// Cria o diretório (e subdiretórios) caso não existam
+void ensureDir(const std::string &path);
+
 // Função para carregar os dados do CSV
 std::vector<TrainingData> loadData(const std::string &filename, int input_size,
                                    int output_size);
