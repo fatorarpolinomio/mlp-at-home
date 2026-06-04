@@ -1,10 +1,15 @@
 #include "dataIO.hpp"
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <random>
 #include <sstream>
+
+void ensureDir(const std::string &path) {
+    std::filesystem::create_directories(path);
+}
 
 std::vector<TrainingData> loadData(const std::string &filename, int input_size,
                                    int output_size) {

@@ -28,9 +28,9 @@ int main() {
         return 1;
     }
 
-    // 80% treino, 20% teste
+    // 85% treino, 15% teste
     std::vector<TrainingData> train_data, test_data;
-    splitTrainTest(full_dataset, 0.8f, train_data, test_data);
+    splitTrainTest(full_dataset, 0.85f, train_data, test_data);
 
     // Hiperparâmetros
     std::vector<int> hidden_sizes = {60};
@@ -41,7 +41,10 @@ int main() {
     auto mlp = MLPNetwork(input_size, output_size, hidden_sizes,
                           ActivationFunctionType::Sigmoid);
 
-    exportWeights("pesos_iniciais.csv", mlp.getInitialWeights(), "Pesos Iniciais");
+    const std::string output_dir = "results";
+    ensureDir(output_dir);
+
+    exportWeights(output_dir + "/pesos_iniciais.csv", mlp.getInitialWeights(), "Pesos Iniciais");
 
     std::cout << "\nFazendo o treinamento..." << std::endl;
 
@@ -79,14 +82,14 @@ int main() {
 
     float erro_final = epoch_losses.empty() ? 0.0f : epoch_losses.back();
     exportHyperparameters(
-        "hiperparametros.txt",
+        output_dir + "/hiperparametros.txt",
         input_size, output_size, hidden_sizes,
         epocas, threshold, learning_rate,
         (int)epoch_losses.size(), erro_final);
 
-    exportWeights("pesos_finais.csv", mlp.getFinalWeights(), "Pesos Finais");
-    exportEpochErrors("erros_por_epoca.csv", epoch_losses);
-    exportTestPredictions("predicoes_teste.csv", test_data, predictions);
+    exportWeights(output_dir + "/pesos_finais.csv", mlp.getFinalWeights(), "Pesos Finais");
+    exportEpochErrors(output_dir + "/erros_por_epoca.csv", epoch_losses);
+    exportTestPredictions(output_dir + "/predicoes_teste.csv", test_data, predictions);
     std::cout << "\nDados exportados com sucesso!" << std::endl;
 
     return 0;
