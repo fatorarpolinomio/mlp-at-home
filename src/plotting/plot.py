@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "matplotlib>=3.10.9",
+#     "pandas>=3.0.3",
+# ]
+# ///
+
 """
 plot.py
 --------------------

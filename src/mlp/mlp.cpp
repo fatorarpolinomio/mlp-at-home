@@ -61,13 +61,9 @@ const WeightSnapshot &MLPNetwork::getInitialWeights() const {
     return initial_weights;
 }
 
-WeightSnapshot MLPNetwork::getFinalWeights() const {
-    return captureWeights();
-}
+WeightSnapshot MLPNetwork::getFinalWeights() const { return captureWeights(); }
 
-int MLPNetwork::getNumLayers() const {
-    return (int)layers.size();
-}
+int MLPNetwork::getNumLayers() const { return (int)layers.size(); }
 
 // MSE (Mean Square Error)
 static float MSE(const std::vector<float> &a, const std::vector<float> &b) {
@@ -90,24 +86,21 @@ float MLPNetwork::trainForEpoch(const std::vector<TrainingData> &data,
         auto input = sample.input;
         auto target = sample.output;
 
-        // Reset gradients
+        // Reseta gradientes
         for (auto &layer : layers) {
             layer.weight_gradients =
                 Matrix(layer.weights.size(),
                        std::vector<float>(layer.weights[0].size()));
             layer.bias_gradients = std::vector<float>(layer.biases.size());
         }
-        // Forward pass
         auto output = forwardPropagation(sample.input);
 
-        // Backward pass
         backwardPropagation(sample.input, target);
 
-        // Acumulate loss
+        // Erro (loss) acumulada
         auto loss = MSE(output, target);
         total_loss += loss;
 
-        // Update weights
         updateWeightsAndBiases(learningRate);
     }
     return total_loss / data.size();
@@ -115,12 +108,14 @@ float MLPNetwork::trainForEpoch(const std::vector<TrainingData> &data,
 
 std::vector<float>
 MLPNetwork::forwardPropagation(const std::vector<float> &input) {
-
+    // forwardPropagation
     std::vector<float> activation(input.begin(), input.end());
 
+    // Para cada layer
     for (auto &layer : layers) {
         auto next_activation = std::vector<float>(layer.biases.size(), 0.0f);
-
+        // calculamos o resultado da função de ativação para cada neuronio da
+        // próxima camada
         for (size_t neuron = 0; neuron < layer.biases.size(); neuron++) {
             float z = layer.biases[neuron];
             for (size_t input = 0; input < activation.size(); input++) {
@@ -138,13 +133,15 @@ MLPNetwork::forwardPropagation(const std::vector<float> &input) {
     return activation;
 }
 
+// Etapa de Backward Propagation
 void MLPNetwork::backwardPropagation(
     const std::vector<float> &input,
     const std::vector<float> &expected_output) {
 
     // deltas do layer de saída
-    auto &output_layer = layers.back();
+    auto &output_layer = layers.back(); // camada de saída
     auto output_layer_id = layers.size() - 1;
+    // computa o delta de cada neuronio na camada de saída usando o MSE
     for (size_t neuron = 0; neuron < output_layer.deltas.size(); neuron++) {
         auto prediction = output_layer.activations[neuron];
         auto target = expected_output[neuron];
@@ -159,6 +156,8 @@ void MLPNetwork::backwardPropagation(
         auto &layer = layers[i];
         auto &next_layer = layers[i + 1];
 
+        // Computa o delta da camada escondida com a derivada da função de
+        // ativação
         for (size_t neuron = 0; neuron < layer.deltas.size(); neuron++) {
             auto activation_func_deriv =
                 activation_function_derivative(layer.activations[neuron]);
@@ -249,6 +248,8 @@ std::vector<float> MLPNetwork::train(const std::vector<TrainingData> &data,
 }
 
 std::vector<float> MLPNetwork::predict(const std::vector<float> &input) {
+    // realiza a predição com a função forwardPropagation (o dado 'atravessa a
+    // rede')
     return forwardPropagation(input);
 }
 
@@ -266,6 +267,7 @@ float MLPNetwork::activation_function(float z) {
 }
 
 float MLPNetwork::activation_function_derivative(float z) {
+    // Retorna a derivada da função de ativação para o valor z
     switch (activation_type) {
     case ActivationFunctionType::ReLu:
         return z > 0.0f ? 1.0f : 0.0f;
