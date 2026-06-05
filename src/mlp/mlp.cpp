@@ -111,7 +111,7 @@ float MLPNetwork::trainForEpoch(const std::vector<TrainingData> &data,
 
 std::vector<float>
 MLPNetwork::forwardPropagation(const std::vector<float> &input) {
-    // forwardPropagation
+    // "última ativação" ou estado de ativação atual da camada
     std::vector<float> activation(input.begin(), input.end());
 
     // Para cada layer
@@ -128,11 +128,13 @@ MLPNetwork::forwardPropagation(const std::vector<float> &input) {
             next_activation[neuron] = activation_function(z);
         }
 
+        // atualizamos o estado das ativações da camada atual
         layer.activations =
             std::vector<float>(next_activation.begin(), next_activation.end());
+        // a ativação atual se torna a última ativação
         activation = next_activation;
     }
-
+    // ultima camada possui o resultado final
     return activation;
 }
 
