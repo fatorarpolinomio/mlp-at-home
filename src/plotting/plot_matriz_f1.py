@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "matplotlib>=3.10.9",
+#     "numpy>=2.4.6",
+#     "pandas>=3.0.3",
+# ]
+# ///
 import os
 import string
 
