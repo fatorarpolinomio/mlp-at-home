@@ -85,12 +85,17 @@ class MLPNetwork {
     // predict realiza a predição da rede para um dado de entrada
     std::vector<float> predict(const std::vector<float> &input);
 
+    // train realiaza o treinamento da rede neural
     std::vector<float> train(const std::vector<TrainingData> &data, int epoches,
                              float threshold, float learningRate);
 
+    // getInitialWeights retorna uma snapshot dos pesos e biases da rede
     const WeightSnapshot &getInitialWeights() const;
 
+    // getFinalWeights retorna uma snapshot dos pesos e biases da rede após o
+    // treinamento
     WeightSnapshot getFinalWeights() const;
 
+    // getNumLayers retorna o número de camadas da rede
     int getNumLayers() const;
 };
